@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"path"
+	"errors"
 )
 
 type IFileCopy interface {
@@ -77,7 +78,7 @@ func (fc *FileCopy) copy(srcRoot string, src string, destination string) error {
 func (fc *FileCopy) Copy(src string, destination string) error {
 	fi, err := os.Stat(src)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	switch mode := fi.Mode(); {
@@ -88,4 +89,22 @@ func (fc *FileCopy) Copy(src string, destination string) error {
 	}
 
 	return nil
+}
+
+func (fc *FileCopy) BatchCopy(configuration *Configuration) []error {
+	if configuration == nil {
+		return []error { errors.New("Configuration is nil") }
+	}
+
+	errs := []error {}
+
+	fc.WhatIf = configuration.WhatIf
+	for _, c := range configuration.Items {
+		err := fc.Copy(c.Source, c.Destination)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errs
 }
